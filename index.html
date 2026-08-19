@@ -18,12 +18,11 @@
             align-items: center;
             font-family: sans-serif; 
         }
-        /* 固定遊戲容器比例，防止變形與隨意縮放 */
         #gameContainer {
             position: relative;
             width: 100vw;
             height: 100vh;
-            max-width: calc(100vh * (1414 / 2000)); /* 鎖定背景 1414x2000 的比例 */
+            max-width: calc(100vh * (1414 / 2000));
             max-height: calc(100vw * (2000 / 1414));
             background: #fff;
             overflow: hidden;
@@ -94,24 +93,20 @@
         let isDrawing = false;
         let path = [];
         
-        // 設定內部邏輯解析度 (配合 1414 x 2000 比例)
         const LOGICAL_WIDTH = 1414;
         const LOGICAL_HEIGHT = 2000;
         canvas.width = LOGICAL_WIDTH;
         canvas.height = LOGICAL_HEIGHT;
 
-        // 定位座標 (依據 1414x2000 畫布)
-        // 讓球員在左上方，踢出方向往右下方龍門
-        const playerPos = { x: 150, y: 150 };
-        const ballStartPos = { x: 320, y: 380 };      // 位於球員腳尖上方
-        const goalCenter = { x: 800, y: 1350 };       // 位於畫面中下方的龍門內
+        // 將球員移至左下方，調整對應的起點與終點（右上方龍門位置）
+        const playerPos = { x: 100, y: 1300 };
+        const ballStartPos = { x: 380, y: 1580 };      // 位於左下方球員腳尖上方
+        const goalCenter = { x: 830, y: 550 };        // 位於背景龍門內的位置
 
-        // 載入圖片
         const bg = new Image(); bg.src = '19.png';
         const player = new Image(); player.src = 'player.png';
         const rawBall = new Image(); rawBall.src = 'football.png';
 
-        // 建立退底去背景後的足球 Canvas 暫存圖
         let processedBallCanvas = document.createElement('canvas');
         let ballReady = false;
 
@@ -121,12 +116,10 @@
             let pCtx = processedBallCanvas.getContext('2d');
             pCtx.drawImage(rawBall, 0, 0);
             
-            // 取得像素並將白色 (接近 255,255,255) 轉為透明
             let imgData = pCtx.getImageData(0, 0, processedBallCanvas.width, processedBallCanvas.height);
             let data = imgData.data;
             for (let i = 0; i < data.length; i += 4) {
                 let r = data[i], g = data[i+1], b = data[i+2];
-                // 如果背景是白色或極淺灰色，將 Alpha 通道設為 0
                 if (r > 200 && g > 200 && b > 200) {
                     data[i+3] = 0;
                 }
@@ -136,7 +129,6 @@
             draw();
         };
 
-        // 確保全部圖片載入後重新繪製
         let loadedImages = 0;
         function checkLoaded() {
             loadedImages++;
@@ -148,13 +140,13 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // 1. 繪製背景
+            // 1. 背景
             ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
             
-            // 2. 繪製球員 (可依需求調整大小，原圖 704x914)
+            // 2. 球員（左下方）
             ctx.drawImage(player, playerPos.x, playerPos.y, 450, 580);
             
-            // 3. 繪製半透明引導道路
+            // 3. 半透明引導道路（從左下方斜向上右上方）
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
             ctx.lineWidth = 70;
             ctx.lineCap = 'round';
@@ -169,7 +161,7 @@
             ctx.arc(ballStartPos.x, ballStartPos.y, 45, 0, Math.PI * 2);
             ctx.fill();
 
-            // 5. 終點閃爍黃色圓形提示 (利用時間產生呼吸燈大小與透明度變化)
+            // 5. 終點閃爍黃色圓形提示（龍門內）
             let pulse = Math.sin(Date.now() / 200) * 8 + 45;
             let alphaPulse = Math.sin(Date.now() / 200) * 0.3 + 0.7;
             ctx.fillStyle = `rgba(255, 215, 0, ${alphaPulse})`;
@@ -180,9 +172,9 @@
             ctx.lineWidth = 6;
             ctx.stroke();
 
-            // 6. 繪製玩家運筆的實線
+            // 6. 玩家運筆實線
             if (path.length > 0) {
-                ctx.strokeStyle = '#1E90FF'; // 使用亮藍色或黑色讓 K2 小朋友看清楚
+                ctx.strokeStyle = '#1E90FF';
                 ctx.lineWidth = 35;
                 ctx.lineCap = 'round';
                 ctx.lineJoin = 'round';
@@ -192,25 +184,23 @@
                 ctx.stroke();
             }
 
-            // 7. 繪製足球 (已去背景)
+            // 7. 足球（放大 100%，尺寸由 120 增為 240）
             if (ballReady) {
                 let currentBallPos = ballStartPos;
                 if (isDrawing && path.length > 0) {
                     currentBallPos = path[path.length - 1];
                 }
-                let ballSize = 120;
+                let ballSize = 240; 
                 ctx.drawImage(processedBallCanvas, currentBallPos.x - ballSize/2, currentBallPos.y - ballSize/2, ballSize, ballSize);
             }
         }
 
-        // 動畫循環（讓終點黃色圓圈持續閃爍）
         function animate() {
             draw();
             requestAnimationFrame(animate);
         }
         requestAnimationFrame(animate);
 
-        // 座標轉換函數（將螢幕觸控點對應至固定比例的邏輯畫布）
         function getCanvasCoord(e) {
             const rect = canvas.getBoundingClientRect();
             const clientX = e.clientX || (e.touches && e.touches[0].clientX);
@@ -225,11 +215,9 @@
             };
         }
 
-        // 觸控與滑鼠事件處理
         function startDrag(e) {
             let pos = getCanvasCoord(e);
-            // 判斷是否點擊在起點球的附近範圍
-            if (Math.hypot(pos.x - ballStartPos.x, pos.y - ballStartPos.y) < 90) {
+            if (Math.hypot(pos.x - ballStartPos.x, pos.y - ballStartPos.y) < 130) {
                 isDrawing = true;
                 path = [pos];
             }
@@ -240,8 +228,7 @@
             let pos = getCanvasCoord(e);
             path.push(pos);
 
-            // 檢查是否到達終點龍門範圍
-            if (Math.hypot(pos.x - goalCenter.x, pos.y - goalCenter.y) < 70) {
+            if (Math.hypot(pos.x - goalCenter.x, pos.y - goalCenter.y) < 80) {
                 win();
             }
         }
@@ -249,7 +236,7 @@
         function endDrag() {
             if (isDrawing) {
                 isDrawing = false;
-                path = []; // 放開後若未完成則重置軌跡
+                path = [];
             }
         }
 
