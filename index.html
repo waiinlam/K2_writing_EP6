@@ -1,0 +1,120 @@
+
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>足球員踢球運筆遊戲</title>
+    <script type="text/javascript" src="https://gc.kes.v2.scr.kaspersky-labs.com/7EA5E9BB-55E1-4C31-9C21-4943DDFED2E4/main.js?attr=ytNu1UaMS5gsTBV15lyTC8Cx0zMUBw8DIUBYFYnizbz5OkHWfn3oZd1Mt1gErDYIQJmrXNTGb1OfXg7w4L18Wig6gyknlwBzA6G56EGLdogsNh2jf5btTuhxwMGOD7drRmqiavk5jCb-JcFzOhZJD-AgUzw0sEP59WzZaYtJxAdKgyR90x9tslKXD4qEgABtFPzqMjXfGPIjTOERU9vssLk1s2JV7krAU4J9RMXeYy1NfVhko2PvLJRHnwkSNMP3PtDF1ebAG3VTpk1XWGjFjNUIfPdbGmMs5s28KJw-w4-JBIg1NBiDKeOl3N9UZMnt" charset="UTF-8"></script><style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; touch-action: none; background: #fff; font-family: sans-serif; }
+        #gameCanvas { display: block; width: 100vw; height: 100vh; }
+        #stars { position: absolute; top: 10px; left: 10px; font-size: 24px; color: #FFD700; z-index: 10; }
+        #winScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); display: none; justify-content: center; align-items: center; z-index: 100; font-size: 3em; color: #FF4500; font-weight: bold; }
+        #replayBtn { position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); padding: 15px 30px; font-size: 20px; background: #4CAF50; color: white; border: none; border-radius: 10px; display: none; z-index: 101; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div id="stars">☆☆☆☆☆</div>
+    <div id="winScreen">✨ 你真努力！</div>
+    <button id="replayBtn">再玩一次</button>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const winScreen = document.getElementById('winScreen');
+        const replayBtn = document.getElementById('replayBtn');
+        const starsEl = document.getElementById('stars');
+        
+        let score = 0;
+        let isDrawing = false;
+        let path = [];
+        
+        // Load images
+        const bg = new Image(); bg.src = '19.jpg';
+        const player = new Image(); player.src = 'player.png';
+        const ball = new Image(); ball.src = 'football.png';
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            draw();
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Background
+            ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
+            
+            // Player
+            ctx.drawImage(player, 50, canvas.height - 400, 200, 300);
+            
+            // Draw guiding path
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 40;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(250, canvas.height - 200); // Start
+            ctx.lineTo(canvas.width - 200, canvas.height - 500); // End
+            ctx.stroke();
+
+            // Draw user path
+            if (path.length > 0) {
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 20;
+                ctx.beginPath();
+                ctx.moveTo(path[0].x, path[0].y);
+                for (let p of path) ctx.lineTo(p.x, p.y);
+                ctx.stroke();
+            }
+        }
+
+        canvas.addEventListener('pointerdown', (e) => {
+            isDrawing = true;
+            path = [{x: e.clientX, y: e.clientY}];
+        });
+
+        canvas.addEventListener('pointermove', (e) => {
+            if (isDrawing) {
+                path.push({x: e.clientX, y: e.clientY});
+                draw();
+                // Check win condition
+                if (e.clientX > canvas.width - 250 && e.clientY < 600) {
+                    win();
+                }
+            }
+        });
+
+        canvas.addEventListener('pointerup', () => {
+            isDrawing = false;
+            path = [];
+            draw();
+        });
+
+        function win() {
+            isDrawing = false;
+            score++;
+            winScreen.style.display = 'flex';
+            setTimeout(() => {
+                winScreen.style.display = 'none';
+                updateStars();
+            }, 1500);
+        }
+
+        function updateStars() {
+            let s = "";
+            for (let i = 0; i < 5; i++) s += (i < score) ? "★" : "☆";
+            starsEl.innerText = s;
+            if (score >= 5) replayBtn.style.display = 'block';
+        }
+
+        replayBtn.onclick = () => {
+            score = 0;
+            updateStars();
+            replayBtn.style.display = 'none';
+        };
+    </script>
+</body>
+</html>
