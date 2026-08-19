@@ -56,13 +56,13 @@
         canvas.width = LOGICAL_WIDTH;
         canvas.height = LOGICAL_HEIGHT;
 
-        // 依據圖片紅圈精確調整的座標：
-        // 球員位置在左下方
-        const playerPos = { x: 120, y: 580 };
-        // 起點：剛好對準球員踢出的腳尖位置
-        const ballStartPos = { x: 340, y: 670 };      
-        // 終點：延伸至龍門網內的位置
-        const goalCenter = { x: 670, y: 520 };        
+        // 【最終精準座標調整】
+        // 1. playerPos: 將球員移至畫布的左下角
+        const playerPos = { x: 100, y: 1300 };
+        // 2. ballStartPos: 放在 player 腳尖的右側作為運筆起點
+        const ballStartPos = { x: 420, y: 1720 };      
+        // 3. goalCenter: 終點延伸至右下方龍門網內
+        const goalCenter = { x: 830, y: 1320 };        
 
         const bg = new Image(); bg.src = '19.png';
         const player = new Image(); player.src = 'player.png';
@@ -91,7 +91,7 @@
             ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
             ctx.drawImage(player, playerPos.x, playerPos.y, 450, 580);
             
-            // 引導路徑
+            // 下方引導路徑
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
             ctx.lineWidth = 70;
             ctx.lineCap = 'round';
@@ -100,7 +100,7 @@
             ctx.lineTo(goalCenter.x, goalCenter.y);
             ctx.stroke();
 
-            // 閃爍黃色目標點（龍門內）
+            // 終點閃爍黃色圓形提示（龍門內）
             let pulse = Math.sin(Date.now() / 200) * 8 + 45;
             ctx.fillStyle = `rgba(255, 215, 0, 0.8)`;
             ctx.beginPath();
@@ -118,7 +118,7 @@
                 ctx.stroke();
             }
 
-            // 足球
+            // 足球 (大小 240)
             if (ballReady) {
                 let p = isDrawing ? path[path.length - 1] : ballStartPos;
                 let ballSize = 240;
