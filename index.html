@@ -5,73 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>足球員踢球運筆遊戲</title>
     <style>
-        body, html { 
-            margin: 0; 
-            padding: 0; 
-            width: 100%; 
-            height: 100%; 
-            overflow: hidden; 
-            touch-action: none; 
-            background: #000; 
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: sans-serif; 
-        }
-        #gameContainer {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            max-width: calc(100vh * (1414 / 2000));
-            max-height: calc(100vw * (2000 / 1414));
-            background: #fff;
-            overflow: hidden;
-        }
-        #gameCanvas { 
-            display: block; 
-            width: 100%; 
-            height: 100%; 
-        }
-        #stars { 
-            position: absolute; 
-            top: 20px; 
-            left: 20px; 
-            font-size: 28px; 
-            color: #FFD700; 
-            z-index: 10; 
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5); 
-        }
-        #winScreen { 
-            position: absolute; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            background: rgba(255, 255, 255, 0.9); 
-            display: none; 
-            justify-content: center; 
-            align-items: center; 
-            z-index: 100; 
-            font-size: 4em; 
-            color: #FF4500; 
-            font-weight: bold; 
-        }
-        #replayBtn { 
-            position: absolute; 
-            bottom: 60px; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            padding: 20px 40px; 
-            font-size: 24px; 
-            background: #4CAF50; 
-            color: white; 
-            border: none; 
-            border-radius: 15px; 
-            display: none; 
-            z-index: 101; 
-            cursor: pointer; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
-        }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; touch-action: none; background: #000; display: flex; justify-content: center; align-items: center; }
+        #gameContainer { position: relative; width: 100vw; height: 100vh; max-width: calc(100vh * (1414 / 2000)); max-height: calc(100vw * (2000 / 1414)); background: #fff; overflow: hidden; }
+        #gameCanvas { display: block; width: 100%; height: 100%; }
+        #stars { position: absolute; top: 20px; left: 20px; font-size: 28px; color: #FFD700; z-index: 10; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        #winScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); display: none; justify-content: center; align-items: center; z-index: 100; font-size: 4em; color: #FF4500; font-weight: bold; }
+        #replayBtn { position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); padding: 20px 40px; font-size: 24px; background: #4CAF50; color: white; border: none; border-radius: 15px; display: none; z-index: 101; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -98,10 +37,13 @@
         canvas.width = LOGICAL_WIDTH;
         canvas.height = LOGICAL_HEIGHT;
 
-        // 將球員移至左下方，調整對應的起點與終點（右上方龍門位置）
-        const playerPos = { x: 100, y: 1300 };
-        const ballStartPos = { x: 380, y: 1580 };      // 位於左下方球員腳尖上方
-        const goalCenter = { x: 830, y: 550 };        // 位於背景龍門內的位置
+        // 【修正座標】
+        // playerPos: 球員在左下
+        // ballStartPos: 腳尖位置 (對應球員踢球腳)
+        // goalCenter: 龍門網中心位置
+        const playerPos = { x: 50, y: 1200 };
+        const ballStartPos = { x: 380, y: 1650 };      
+        const goalCenter = { x: 780, y: 700 };        
 
         const bg = new Image(); bg.src = '19.png';
         const player = new Image(); player.src = 'player.png';
@@ -115,161 +57,90 @@
             processedBallCanvas.height = rawBall.height;
             let pCtx = processedBallCanvas.getContext('2d');
             pCtx.drawImage(rawBall, 0, 0);
-            
             let imgData = pCtx.getImageData(0, 0, processedBallCanvas.width, processedBallCanvas.height);
             let data = imgData.data;
             for (let i = 0; i < data.length; i += 4) {
-                let r = data[i], g = data[i+1], b = data[i+2];
-                if (r > 200 && g > 200 && b > 200) {
-                    data[i+3] = 0;
-                }
+                if (data[i] > 200 && data[i+1] > 200 && data[i+2] > 200) data[i+3] = 0;
             }
             pCtx.putImageData(imgData, 0, 0);
             ballReady = true;
             draw();
         };
 
-        let loadedImages = 0;
-        function checkLoaded() {
-            loadedImages++;
-            if (loadedImages >= 2) draw();
-        }
-        bg.onload = checkLoaded;
-        player.onload = checkLoaded;
-
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // 1. 背景
             ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
+            ctx.drawImage(player, playerPos.x, playerPos.y, 500, 650);
             
-            // 2. 球員（左下方）
-            ctx.drawImage(player, playerPos.x, playerPos.y, 450, 580);
-            
-            // 3. 半透明引導道路（從左下方斜向上右上方）
+            // 引導路徑
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-            ctx.lineWidth = 70;
+            ctx.lineWidth = 80;
             ctx.lineCap = 'round';
             ctx.beginPath();
             ctx.moveTo(ballStartPos.x, ballStartPos.y);
             ctx.lineTo(goalCenter.x, goalCenter.y);
             ctx.stroke();
 
-            // 4. 起點白圓點
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-            ctx.beginPath();
-            ctx.arc(ballStartPos.x, ballStartPos.y, 45, 0, Math.PI * 2);
-            ctx.fill();
-
-            // 5. 終點閃爍黃色圓形提示（龍門內）
-            let pulse = Math.sin(Date.now() / 200) * 8 + 45;
-            let alphaPulse = Math.sin(Date.now() / 200) * 0.3 + 0.7;
-            ctx.fillStyle = `rgba(255, 215, 0, ${alphaPulse})`;
+            // 閃爍目標點
+            let pulse = Math.sin(Date.now() / 200) * 8 + 50;
+            ctx.fillStyle = `rgba(255, 215, 0, 0.8)`;
             ctx.beginPath();
             ctx.arc(goalCenter.x, goalCenter.y, pulse, 0, Math.PI * 2);
             ctx.fill();
-            ctx.strokeStyle = '#FFA500';
-            ctx.lineWidth = 6;
-            ctx.stroke();
 
-            // 6. 玩家運筆實線
+            // 玩家運筆
             if (path.length > 0) {
                 ctx.strokeStyle = '#1E90FF';
-                ctx.lineWidth = 35;
+                ctx.lineWidth = 40;
                 ctx.lineCap = 'round';
-                ctx.lineJoin = 'round';
                 ctx.beginPath();
                 ctx.moveTo(path[0].x, path[0].y);
                 for (let p of path) ctx.lineTo(p.x, p.y);
                 ctx.stroke();
             }
 
-            // 7. 足球（放大 100%，尺寸由 120 增為 240）
+            // 足球
             if (ballReady) {
-                let currentBallPos = ballStartPos;
-                if (isDrawing && path.length > 0) {
-                    currentBallPos = path[path.length - 1];
-                }
-                let ballSize = 240; 
-                ctx.drawImage(processedBallCanvas, currentBallPos.x - ballSize/2, currentBallPos.y - ballSize/2, ballSize, ballSize);
+                let p = isDrawing ? path[path.length - 1] : ballStartPos;
+                ctx.drawImage(processedBallCanvas, p.x - 120, p.y - 120, 240, 240);
             }
         }
 
-        function animate() {
-            draw();
-            requestAnimationFrame(animate);
-        }
-        requestAnimationFrame(animate);
+        function animate() { draw(); requestAnimationFrame(animate); }
+        animate();
 
-        function getCanvasCoord(e) {
+        function getCoord(e) {
             const rect = canvas.getBoundingClientRect();
-            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-            
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            
-            return {
-                x: (clientX - rect.left) * scaleX,
-                y: (clientY - rect.top) * scaleY
-            };
+            const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+            const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+            return { x: (clientX - rect.left) * (canvas.width / rect.width), y: (clientY - rect.top) * (canvas.height / rect.height) };
         }
 
-        function startDrag(e) {
-            let pos = getCanvasCoord(e);
-            if (Math.hypot(pos.x - ballStartPos.x, pos.y - ballStartPos.y) < 130) {
-                isDrawing = true;
-                path = [pos];
-            }
-        }
+        canvas.addEventListener('pointerdown', (e) => {
+            let p = getCoord(e);
+            if (Math.hypot(p.x - ballStartPos.x, p.y - ballStartPos.y) < 150) isDrawing = true, path = [p];
+        });
 
-        function moveDrag(e) {
+        canvas.addEventListener('pointermove', (e) => {
             if (!isDrawing) return;
-            let pos = getCanvasCoord(e);
-            path.push(pos);
+            let p = getCoord(e);
+            path.push(p);
+            if (Math.hypot(p.x - goalCenter.x, p.y - goalCenter.y) < 100) win();
+        });
 
-            if (Math.hypot(pos.x - goalCenter.x, pos.y - goalCenter.y) < 80) {
-                win();
-            }
-        }
-
-        function endDrag() {
-            if (isDrawing) {
-                isDrawing = false;
-                path = [];
-            }
-        }
-
-        canvas.addEventListener('pointerdown', startDrag);
-        canvas.addEventListener('pointermove', moveDrag);
-        canvas.addEventListener('pointerup', endDrag);
+        canvas.addEventListener('pointerup', () => { isDrawing = false; path = []; });
 
         function win() {
-            isDrawing = false;
-            score++;
-            winScreen.style.display = 'flex';
-            setTimeout(() => {
-                winScreen.style.display = 'none';
-                updateStars();
-                path = [];
-            }, 1500);
+            isDrawing = false; score++; winScreen.style.display = 'flex';
+            setTimeout(() => { winScreen.style.display = 'none'; updateStars(); path = []; }, 1500);
         }
 
         function updateStars() {
-            let s = "";
-            for (let i = 0; i < 5; i++) s += (i < score) ? "★" : "☆";
-            starsEl.innerText = s;
-            if (score >= 5) {
-                replayBtn.style.display = 'block';
-            }
+            starsEl.innerText = "★".repeat(score) + "☆".repeat(5 - score);
+            if (score >= 5) replayBtn.style.display = 'block';
         }
 
-        replayBtn.onclick = () => {
-            score = 0;
-            updateStars();
-            replayBtn.style.display = 'none';
-            path = [];
-        };
+        replayBtn.onclick = () => { score = 0; updateStars(); replayBtn.style.display = 'none'; };
     </script>
 </body>
 </html>
