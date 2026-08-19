@@ -1,16 +1,16 @@
-
 <!DOCTYPE html>
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>足球員踢球運筆遊戲</title>
-    <script type="text/javascript" src="https://gc.kes.v2.scr.kaspersky-labs.com/7EA5E9BB-55E1-4C31-9C21-4943DDFED2E4/main.js?attr=ytNu1UaMS5gsTBV15lyTC8Cx0zMUBw8DIUBYFYnizbz5OkHWfn3oZd1Mt1gErDYIQJmrXNTGb1OfXg7w4L18Wig6gyknlwBzA6G56EGLdogsNh2jf5btTuhxwMGOD7drRmqiavk5jCb-JcFzOhZJD-AgUzw0sEP59WzZaYtJxAdKgyR90x9tslKXD4qEgABtFPzqMjXfGPIjTOERU9vssLk1s2JV7krAU4J9RMXeYy1NfVhko2PvLJRHnwkSNMP3PtDF1ebAG3VTpk1XWGjFjNUIfPdbGmMs5s28KJw-w4-JBIg1NBiDKeOl3N9UZMnt" charset="UTF-8"></script><style>
+    <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; touch-action: none; background: #fff; font-family: sans-serif; }
         #gameCanvas { display: block; width: 100vw; height: 100vh; }
-        #stars { position: absolute; top: 10px; left: 10px; font-size: 24px; color: #FFD700; z-index: 10; }
-        #winScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); display: none; justify-content: center; align-items: center; z-index: 100; font-size: 3em; color: #FF4500; font-weight: bold; }
-        #replayBtn { position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); padding: 15px 30px; font-size: 20px; background: #4CAF50; color: white; border: none; border-radius: 10px; display: none; z-index: 101; cursor: pointer; }
+        #stars { position: absolute; top: 10px; left: 10px; font-size: 30px; color: #FFD700; z-index: 10; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        #winScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); display: none; justify-content: center; align-items: center; z-index: 100; font-size: 5em; color: #FF4500; font-weight: bold; text-shadow: 3px 3px 0 #fff, -3px -3px 0 #fff, 3px -3px 0 #fff, -3px 3px 0 #fff; }
+        #replayBtn { position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); padding: 20px 40px; font-size: 24px; background: #4CAF50; color: white; border: none; border-radius: 15px; display: none; z-index: 101; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        #replayBtn:hover { background: #45a049; }
     </style>
 </head>
 <body>
@@ -29,15 +29,34 @@
         let score = 0;
         let isDrawing = false;
         let path = [];
-        
+        let playerPos = { x: 50, y: 0 };
+        let ballPos = { x: 0, y: 0 };
+        let goalArea = { x: 0, y: 0, w: 0, h: 0 };
+        let pathStart = { x: 0, y: 0 };
+
         // Load images
-        const bg = new Image(); bg.src = '19.jpg';
+        const bg = new Image(); bg.src = '19.png'; // 修正了檔名
         const player = new Image(); player.src = 'player.png';
-        const ball = new Image(); ball.src = 'football.png';
+        const ball = new Image(); ball.src = 'football.png'; // 加入了足球
 
         function resize() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
+            
+            // Recalculate positions based on new size
+            playerPos.x = 100; // Adjust based on canvas size
+            playerPos.y = canvas.height - 600; // Adjust based on canvas size
+            ballPos.x = playerPos.x + 150; // Kick foot position
+            ballPos.y = playerPos.y + 450; // Kick foot position
+            pathStart.x = ballPos.x; // Set path start at ball position
+            pathStart.y = ballPos.y; // Set path start at ball position
+
+            // Goal area (adjust based on background 19.png)
+            goalArea.x = canvas.width * 0.65; // Example, adjust to match background
+            goalArea.y = canvas.height * 0.25; // Example, adjust to match background
+            goalArea.w = canvas.width * 0.3; // Example, adjust to match background
+            goalArea.h = canvas.height * 0.4; // Example, adjust to match background
+            
             draw();
         }
         window.addEventListener('resize', resize);
@@ -49,48 +68,74 @@
             ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
             
             // Player
-            ctx.drawImage(player, 50, canvas.height - 400, 200, 300);
+            ctx.drawImage(player, playerPos.x, playerPos.y, 300, 450);
             
-            // Draw guiding path
+            // Draw guiding path (translucent road)
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-            ctx.lineWidth = 40;
+            ctx.lineWidth = 60;
             ctx.lineCap = 'round';
             ctx.beginPath();
-            ctx.moveTo(250, canvas.height - 200); // Start
-            ctx.lineTo(canvas.width - 200, canvas.height - 500); // End
+            ctx.moveTo(pathStart.x, pathStart.y); // Start at ball
+            ctx.lineTo(goalArea.x + goalArea.w/2, goalArea.y + goalArea.h/2); // End in goal
             ctx.stroke();
+            
+            // Draw start point (circle)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.beginPath();
+            ctx.arc(pathStart.x, pathStart.y, 40, 0, Math.PI * 2);
+            ctx.fill();
 
             // Draw user path
             if (path.length > 0) {
                 ctx.strokeStyle = '#000';
-                ctx.lineWidth = 20;
+                ctx.lineWidth = 30;
                 ctx.beginPath();
                 ctx.moveTo(path[0].x, path[0].y);
                 for (let p of path) ctx.lineTo(p.x, p.y);
                 ctx.stroke();
             }
+
+            // Draw Ball (follows drag)
+            if (isDrawing) {
+                 ctx.drawImage(ball, path[path.length-1].x - 50, path[path.length-1].y - 50, 100, 100);
+            } else {
+                 // Draw ball at start position
+                 ctx.drawImage(ball, ballPos.x - 50, ballPos.y - 50, 100, 100);
+            }
+
+            // For debugging: draw goal area box
+            // ctx.strokeStyle = 'red';
+            // ctx.strokeRect(goalArea.x, goalArea.y, goalArea.w, goalArea.h);
         }
 
         canvas.addEventListener('pointerdown', (e) => {
-            isDrawing = true;
-            path = [{x: e.clientX, y: e.clientY}];
+            // Only start drawing if near the ball
+            if (Math.hypot(e.clientX - ballPos.x, e.clientY - ballPos.y) < 80) {
+                isDrawing = true;
+                path = [{x: e.clientX, y: e.clientY}];
+                draw();
+            }
         });
 
         canvas.addEventListener('pointermove', (e) => {
             if (isDrawing) {
                 path.push({x: e.clientX, y: e.clientY});
                 draw();
-                // Check win condition
-                if (e.clientX > canvas.width - 250 && e.clientY < 600) {
+                // Check win condition: if path end is inside goal area
+                let p = path[path.length-1];
+                if (p.x > goalArea.x && p.x < goalArea.x + goalArea.w && 
+                    p.y > goalArea.y && p.y < goalArea.y + goalArea.h) {
                     win();
                 }
             }
         });
 
         canvas.addEventListener('pointerup', () => {
-            isDrawing = false;
-            path = [];
-            draw();
+            if (isDrawing) {
+                isDrawing = false;
+                path = []; // Reset path if not finished
+                draw();
+            }
         });
 
         function win() {
@@ -114,6 +159,7 @@
             score = 0;
             updateStars();
             replayBtn.style.display = 'none';
+            draw();
         };
     </script>
 </body>
