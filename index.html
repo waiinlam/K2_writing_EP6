@@ -56,12 +56,12 @@
         canvas.width = LOGICAL_WIDTH;
         canvas.height = LOGICAL_HEIGHT;
 
-        // 【最終精準座標調整】
-        // 1. playerPos: 將球員移至畫布的左下角
+        // 【微調後的座標】
+        // 1. playerPos: 球員維持在左下角
         const playerPos = { x: 100, y: 1300 };
-        // 2. ballStartPos: 放在 player 腳尖的右側作為運筆起點
-        const ballStartPos = { x: 420, y: 1720 };      
-        // 3. goalCenter: 終點延伸至右下方龍門網內
+        // 2. ballStartPos: 將起點向右上方移開，不與腳部重疊
+        const ballStartPos = { x: 500, y: 1640 };      
+        // 3. goalCenter: 終點對準右下方龍門內
         const goalCenter = { x: 830, y: 1320 };        
 
         const bg = new Image(); bg.src = '19.png';
@@ -91,7 +91,7 @@
             ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
             ctx.drawImage(player, playerPos.x, playerPos.y, 450, 580);
             
-            // 下方引導路徑
+            // 引導路徑
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
             ctx.lineWidth = 70;
             ctx.lineCap = 'round';
